@@ -15,6 +15,10 @@ and use the "evaluate in REPL" functionality of that tool
 4. Evaluate code
 
 
+## Bunnicula
+
+see also [Bunnicula, asynchronous messaging with RabbitMQ for Clojure](https://blog.getenjoyhq.com/bunnicula-asynchronous-messaging-with-rabbitmq-for-clojure/)
+
 
 
 
