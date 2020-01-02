@@ -1,6 +1,6 @@
 # Bunnicula-Playground
 
-#### a little project to play with [Bunnicula](https://github.com/nomnom-insights/nomnom.bunnicula) and [RabbitMQ]()
+#### a little project to play with [Bunnicula](https://github.com/nomnom-insights/nomnom.bunnicula) and [RabbitMQ](https://www.rabbitmq.com)
 
 This project was designed for [REPL-Driven Development](https://clojure.org/guides/repl/introduction) so it is recommended you work in your editor-of-choice
 and use the "evaluate in REPL" functionality of that tool
