@@ -9,6 +9,41 @@
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Make sure
+;      rabbitMQ
+;           is running!
+;
+; > rabbitmq-server
+;
+;
+; Make sure you have rabbitMQ configured:
+;
+;    http://localhost:15672
+;
+;    vHost      /main
+;    exchange   my-exchange
+;    queues     some-queue
+;               user-mgmt
+;               calculate
+;               calculate-result
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
 (def connection (connection/create {:host "127.0.0.1"
                                     :port 5672
                                     :username "guest"
