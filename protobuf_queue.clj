@@ -8,7 +8,15 @@
             [protobuf.core :as pb]))
 
 
+; compile each *proto into *.java
+;
 ; protoc -I=resources/proto --java_out=target/java resources/proto/message.proto
+;
+;
+;
+;
+;
+; now compile the *.java into *.class (not correct yet)
 ;
 ; javac -d target/classes target/java/com/bunnicula_playground/Message.java
 
