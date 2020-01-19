@@ -40,6 +40,7 @@
          (protobuf/->bytes)))
 
 alice
+(.getEnclosingClass (protobuf/->bytes alice))
 b
 
 (protobuf/bytes-> alice b)
@@ -118,6 +119,32 @@ b
   ; this one looks "protobuf'd" so the :parsed data is a binary jumble(?)
 
 
+; looks like a misunderstanding on my part, there is a little more involved
+;
+; see http://www.sciforums.com/threads/protobuf-over-rabbitmq.113528/
+;
+;         yes, it's in C++, but understandable
+;
+; TL;DR - we need a ByteStream in between the protobuffers and the queue
+;
+;
+; the key lines:
+; ByteArrayOutputStream oStream = new ByteArrayOutputStream();
+; data.writeTo(oStream);
+;
+; //The client sends the binary message to the queue with the properties I set earlier:
+;
+; channel.basicPublish("", requestQueueName, props, oStream.toByteArray());
+;
+;
+; getting the data back:
+;
+; ByteArrayInputStream iStream = new ByteArrayInputStream(delivery.getBody());
+;
+;
+;
+;
+
 
 
 
@@ -164,13 +191,34 @@ b
 
 
 
+
+
 (:parsed (get @message-received 0))
 
 
 ; we've received the "b" messages off the queue, but it's "binary", let's
 ; see if we can recover the edn
 ;
-(def parsed (:parsed (get @message-received 1)))
-(def body (:body (get @message-received 1)))
-(protobuf/read alice (ByteArrayInputStream. body))
 
+; a place to put the data
+;
+(def msg-rcvd (protobuf/create Example$Person
+                {:id 108
+                 :name "dummy"
+                 :email "dummy"}))
+
+(protobuf/bytes-> alice b)
+
+
+(def body (:body (get @message-received 1)))
+(def parsed (:parsed (get @message-received 1)))
+
+(protobuf/bytes-> msg-rcvd body)
+  ; "truncatedMessage" error
+(protobuf/bytes-> msg-rcvd parsed)
+  ; "No method in multimethod 'parse' for dispatch value: String"
+
+(protobuf/bytes-> msg-rcvd (.getBytes body))
+  ; "No matching field found: getBytes"
+(protobuf/bytes-> msg-rcvd (.getBytes parsed))
+  ; "Protocol message tag had invalid wire type"
