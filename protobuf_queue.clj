@@ -141,7 +141,8 @@ b
 ;
 ; ByteArrayInputStream iStream = new ByteArrayInputStream(delivery.getBody());
 ;
-;
+; see also https://clojusc.github.io/protobuf/current/1050-tutorial.html
+;      especially "Reading and Writing", "Writing a Message", and "Reading a Message"
 ;
 ;
 
