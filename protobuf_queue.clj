@@ -23,7 +23,7 @@
 
 
 (import 'com.example.tutorial.Example$Person)
-(import 'java.io.ByteArrayInputStream)
+(import '(java.io ByteArrayInputStream ByteArrayOutputStream))
 
 
 
@@ -110,6 +110,12 @@ b
 
 
 
+;;;;;;;;;;;;;;;
+;
+; NOTE: these use the default de/serializer (json)
+;
+;;;;;;;;;;;;;;;
+
 ; put some kind of pb content, like "alice" on the queue
 ;
 (pub "some.queue" alice)
@@ -145,6 +151,62 @@ b
 ;      especially "Reading and Writing", "Writing a Message", and "Reading a Message"
 ;
 ;
+;
+; Bunnicula also support supplying your own serialization/deserialization functions:
+;
+; see https://github.com/nomnom-insights/nomnom.bunnicula/blob/master/doc/components.md#configuration-1
+;
+; and https://github.com/nomnom-insights/nomnom.bunnicula/blob/master/doc/components.md#configuration-2
+;
+; the default is JSON (using cheshire):
+;
+;      (defn json-serializer [message]
+;        (-> message
+;          json/generate-string
+;          (.getBytes)))
+;
+;      (defn json-deserializer [body]
+;        (-> body
+;          to-string
+;          (json/parse-string true)))
+;
+;
+;
+; we probably also need some support from here:
+;     https://www.programiz.com/java-programming/examples/convert-outputstream-string
+
+
+
+
+
+;(defn proto-serializer [message]
+;  (-> message
+;    json/generate-string
+;    (.getBytes)))
+;
+;(defn proto-deserializer [body]
+;  (-> body
+;    to-string
+;    (json/parse-string true)))
+;
+
+
+; use our new serializer to put "b" on the queue
+;
+;(def proto-publisher (publisher/create {:exchange-name "my-exchange"
+;                                        :serialization-fn proto-serializer}))
+;
+;(def proto-server-system (-> (component/system-map
+;                               :publisher (component/using
+;                                            proto-publisher
+;                                            [:rmq-connection])
+;                               :rmq-connection connection)
+;                           component/start-system))
+;
+;(def proto-pub (partial protocol/publish (:publisher proto-server-system)))
+;
+;(proto-pub "some.queue" b)
+
 
 
 
