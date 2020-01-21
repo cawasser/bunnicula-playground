@@ -22,16 +22,25 @@
 
 
 
-(import 'com.example.tutorial.Example$Person)
-(import '(java.io ByteArrayInputStream ByteArrayOutputStream))
+;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; let's play a little with protobuf
+;
 
+(import '(com.example.tutorial Example$Person))
 
-
-
+; make an "object" of "type" Example$Person
+;
+; see the java code in:
+;      src/java/*.java
+;
 (def alice (protobuf/create Example$Person
              {:id 108
               :name "Alice"
               :email "alice@example.com"}))
+
+; right now it's just a map (with some special properties we'll see later)
+alice
 
 
 (def b (-> alice
@@ -39,23 +48,43 @@
          (assoc :likes ["climbing" "running" "jumping"])
          (protobuf/->bytes)))
 
+(def c (-> alice
+           (assoc :name "Alice B. Carol")
+           (assoc :likes ["climbing" "running" "jumping"])))
+
+; this is "clojure-y"
 alice
-(.getEnclosingClass (protobuf/->bytes alice))
+
+; these are "binary"
+(protobuf/->bytes alice)
 b
 
-; we just need a valid protobuf instance to provide the validation stuff to get the
-; binary daya back, but it MUST be the correct "type"
+; this is still "clojure-y"
+c
+
+; how do we get a CLojure thing back form a protobuf (binary) thing?
+;
+;    (->bytes)
+;
+; BUT, need a valid protobuf instance to provide validation stuff to get the
+; binary data back, so it MUST be the correct "type"
 ;
 ; NOTE: alice does NOT change!
 ;
 (def round-trip (protobuf/bytes-> alice b))
 round-trip
+alice
+(= round-trip c)
 
 ; some additional fooling around
 ;
-
 (protobuf/schema Example$Person)
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Now for some RabbitMQ!
+;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -90,79 +119,15 @@ round-trip
                                     :password "guest"
                                     :vhost "/main"}))
 
-(def some-queue "some.queue")
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; publisher
 
 
-
-(def publisher (publisher/create {:exchange-name "my-exchange"}))
-
-(def server-system (-> (component/system-map
-                         :publisher (component/using
-                                      publisher
-                                      [:rmq-connection])
-                         :rmq-connection connection)
-                     component/start-system))
-
-(def pub (partial protocol/publish (:publisher server-system)))
-
-
-
-;;;;;;;;;;;;;;;
+; by default Bunnicula serializes every message to JSON prior to publishing it and gets it from JSON after
+; consuming it off a queue.
 ;
-; NOTE: these use the default de/serializer (json)
-;
-;;;;;;;;;;;;;;;
-
-; put some kind of pb content, like "alice" on the queue
-;
-(pub "some.queue" alice)
-  ; this one looks "un-mangled" so we just get back an edn map
-
-(pub "some.queue" b)
-  ; this one looks "protobuf'd" so the :parsed data is a binary jumble(?)
-
-
-; looks like a misunderstanding on my part, there is a little more involved
-;
-; see http://www.sciforums.com/threads/protobuf-over-rabbitmq.113528/
-;
-;         yes, it's in C++, but understandable
-;
-; TL;DR - we need a ByteStream in between the protobuffers and the queue
-;
-;
-; the key lines:
-; ByteArrayOutputStream oStream = new ByteArrayOutputStream();
-; data.writeTo(oStream);
-;
-; //The client sends the binary message to the queue with the properties I set earlier:
-;
-; channel.basicPublish("", requestQueueName, props, oStream.toByteArray());
-;
-;
-; getting the data back:
-;
-; ByteArrayInputStream iStream = new ByteArrayInputStream(delivery.getBody());
-;
-; see also https://clojusc.github.io/protobuf/current/1050-tutorial.html
-;      especially "Reading and Writing", "Writing a Message", and "Reading a Message"
-;
-;
-;
-; Bunnicula also support supplying your own serialization/deserialization functions:
-;
-; see https://github.com/nomnom-insights/nomnom.bunnicula/blob/master/doc/components.md#configuration-1
-;
-; and https://github.com/nomnom-insights/nomnom.bunnicula/blob/master/doc/components.md#configuration-2
-;
-; the default is JSON (using cheshire):
+; here is the default JSON (using cheshire):
 ;
 ;      (defn json-serializer [message]
 ;        (-> message
@@ -173,28 +138,34 @@ round-trip
 ;        (-> body
 ;          to-string
 ;          (json/parse-string true)))
-;
-;
-;
-; we probably also need some support from here:
-;     https://www.programiz.com/java-programming/examples/convert-outputstream-string
 
 
-(defn proto-serializer [message]
+; WE DON'T WANT THIS!
+;
+; Fortunately, Bunnicula also supports supplying your own serialization/deserialization functions:
+;
+; see https://github.com/nomnom-insights/nomnom.bunnicula/blob/master/doc/components.md#configuration-1
+;
+; and https://github.com/nomnom-insights/nomnom.bunnicula/blob/master/doc/components.md#configuration-2
+;
+; in fact, we don't want Bunnicula doing ANYTHING with our protobuf messages.
+; we will do the serialization ourselves!
+;
+; so...
+;
+(defn no-op-serializer [message]
   (prn "proto-serializer " message)
   message)
 
-(defn proto-deserializer [body]
-  prn "proto-deserializer " body
+(defn no-op-deserializer [body]
+  (prn "proto-deserializer " body)
   body)
-
 
 
 ; use our new serializer to put "b" on the queue
 ;
 (def proto-publisher (publisher/create {:exchange-name "my-exchange"
-                                        :serializer proto-serializer}))
-
+                                        :serializer no-op-serializer}))
 (def proto-server-system (-> (component/system-map
                                :publisher (component/using
                                             proto-publisher
@@ -203,29 +174,37 @@ round-trip
                            component/start-system))
 (component/stop proto-server-system)
 
+; let's publish!!!
+;
 (def proto-pub (partial protocol/publish (:publisher proto-server-system)))
 
+; we do our own serialization with (->bytes)
+;
 (proto-pub "some.queue" (protobuf/->bytes alice))
-
 (proto-pub "some.queue" b)
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; consumer
 
-
-
-; stores the messages we've seen so far
+; this stores the messages we've seen so far
 ;
 (def message-received (atom []))
-
 
 (defn pb-handler
   [body parsed envelope components]
 
+  (prn "pb-handler " body)
+
+  ; we use (bytes->) to convert the raw data back
+  ;
+  ; note: we need to pass (bytes-> both he raw data (body) AND a valid protobuf object ('alice')
+  ; in order for this to work. this is because protobuf is a TYPED OBJECT system, so we need something
+  ; (alice) to do the type enforcement...
+  ;
+  ; note note: alice is NOT changed (it's immutable, just like other Clojure things)
+  ;
   (swap! message-received conj {:body body :converted (protobuf/bytes-> alice body)})
   :ack)
 
@@ -233,14 +212,13 @@ round-trip
 ; hook our handler into the mechanism (including error and retry)
 ;
 (def message-consumer (consumer/create {:message-handler-fn pb-handler
-                                        :deserializer proto-deserializer
+                                        :deserializer no-op-deserializer
                                         :options            {:queue-name "some.queue"
                                                              :exchange-name "my-exchange"
                                                              :timeout-seconds 120
                                                              :backoff-interval-seconds 60
                                                              :consumer-threads 4
                                                              :max-retries 3}}))
-
 
 ; this "system" just runs until shutdown, processing messages from "some.queue"
 ;
@@ -253,36 +231,11 @@ round-trip
                       component/start-system))
 (component/stop-system message-system)
 
-
-
-
-
-(:parsed (get @message-received 0))
-
-
-; we've received the "b" messages off the queue, but it's "binary", let's
-; see if we can recover the edn
+; did we get back what we put in?
 ;
+@message-received
+(= alice (:converted (get @message-received 0)))
+(= round-trip
+   (:converted (get @message-received 1)))
 
-; a place to put the data
-;
-(def msg-rcvd (protobuf/create Example$Person
-                {:id 108
-                 :name "dummy"
-                 :email "dummy"}))
-
-(protobuf/bytes-> alice b)
-
-
-(def body (:body (get @message-received 1)))
-(def parsed (:parsed (get @message-received 1)))
-
-(protobuf/bytes-> msg-rcvd body)
-  ; "truncatedMessage" error
-(protobuf/bytes-> msg-rcvd parsed)
-  ; "No method in multimethod 'parse' for dispatch value: String"
-
-(protobuf/bytes-> msg-rcvd (.getBytes body))
-  ; "No matching field found: getBytes"
-(protobuf/bytes-> msg-rcvd (.getBytes parsed))
-  ; "Protocol message tag had invalid wire type"
+; YES!!!!!
