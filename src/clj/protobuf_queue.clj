@@ -57,6 +57,7 @@ alice
 
 ; these are "binary"
 (protobuf/->bytes alice)
+(protobuf/->bytes c)
 b
 
 ; this is still "clojure-y"
@@ -72,6 +73,7 @@ c
 ; NOTE: alice does NOT change!
 ;
 (def round-trip (protobuf/bytes-> alice b))
+
 round-trip
 alice
 (= round-trip c)
@@ -166,6 +168,7 @@ alice
 ;
 (def proto-publisher (publisher/create {:exchange-name "my-exchange"
                                         :serializer no-op-serializer}))
+
 (def proto-server-system (-> (component/system-map
                                :publisher (component/using
                                             proto-publisher
@@ -220,7 +223,7 @@ alice
                                                              :consumer-threads 4
                                                              :max-retries 3}}))
 
-; this "system" just runs until shutdown, processing messages from "some.queue"
+; this "system" just runs until shutdown[1], processing messages from "some.queue"
 ;
 (def message-system (-> (component/system-map
                           :rmq-connection connection
@@ -229,6 +232,8 @@ alice
                                       message-consumer
                                       [:rmq-connection :monitoring]))
                       component/start-system))
+
+; [1] or you evaluate this
 (component/stop-system message-system)
 
 ; did we get back what we put in?
