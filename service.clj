@@ -79,7 +79,7 @@
 ; this works!
 (protocol/publish (:publisher server-system)
   "some.queue"
-  {:integration_id 1 :message_id "123"}) ; this works!
+  {:integration_id 1 :message_id "123"})
 
 
 ; this works!
@@ -193,7 +193,7 @@
                                       message-consumer
                                       [:rmq-connection :monitoring]))
                       component/start-system))
-
+(component/stop message-system)
 
 (def user-system
   (-> (component/system-map

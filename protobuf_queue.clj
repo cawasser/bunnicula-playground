@@ -43,7 +43,13 @@ alice
 (.getEnclosingClass (protobuf/->bytes alice))
 b
 
-(protobuf/bytes-> alice b)
+; we just need a valid protobuf instance to provide the validation stuff to get the
+; binary daya back, but it MUST be the correct "type"
+;
+; NOTE: alice does NOT change!
+;
+(def round-trip (protobuf/bytes-> alice b))
+round-trip
 
 ; some additional fooling around
 ;
@@ -96,8 +102,6 @@ b
 
 
 (def publisher (publisher/create {:exchange-name "my-exchange"}))
-
-
 
 (def server-system (-> (component/system-map
                          :publisher (component/using
@@ -176,37 +180,34 @@ b
 ;     https://www.programiz.com/java-programming/examples/convert-outputstream-string
 
 
+(defn proto-serializer [message]
+  (prn "proto-serializer " message)
+  message)
 
+(defn proto-deserializer [body]
+  prn "proto-deserializer " body
+  body)
 
-
-;(defn proto-serializer [message]
-;  (-> message
-;    json/generate-string
-;    (.getBytes)))
-;
-;(defn proto-deserializer [body]
-;  (-> body
-;    to-string
-;    (json/parse-string true)))
-;
 
 
 ; use our new serializer to put "b" on the queue
 ;
-;(def proto-publisher (publisher/create {:exchange-name "my-exchange"
-;                                        :serialization-fn proto-serializer}))
-;
-;(def proto-server-system (-> (component/system-map
-;                               :publisher (component/using
-;                                            proto-publisher
-;                                            [:rmq-connection])
-;                               :rmq-connection connection)
-;                           component/start-system))
-;
-;(def proto-pub (partial protocol/publish (:publisher proto-server-system)))
-;
-;(proto-pub "some.queue" b)
+(def proto-publisher (publisher/create {:exchange-name "my-exchange"
+                                        :serializer proto-serializer}))
 
+(def proto-server-system (-> (component/system-map
+                               :publisher (component/using
+                                            proto-publisher
+                                            [:rmq-connection])
+                               :rmq-connection connection)
+                           component/start-system))
+(component/stop proto-server-system)
+
+(def proto-pub (partial protocol/publish (:publisher proto-server-system)))
+
+(proto-pub "some.queue" (protobuf/->bytes alice))
+
+(proto-pub "some.queue" b)
 
 
 
@@ -225,20 +226,20 @@ b
 (defn pb-handler
   [body parsed envelope components]
 
-  (swap! message-received conj {:body body
-                                :parsed parsed})
+  (swap! message-received conj {:body body :converted (protobuf/bytes-> alice body)})
   :ack)
 
 
 ; hook our handler into the mechanism (including error and retry)
 ;
 (def message-consumer (consumer/create {:message-handler-fn pb-handler
-                                        :options {:queue-name "some.queue"
-                                                  :exchange-name "my-exchange"
-                                                  :timeout-seconds 120
-                                                  :backoff-interval-seconds 60
-                                                  :consumer-threads 4
-                                                  :max-retries 3}}))
+                                        :deserializer proto-deserializer
+                                        :options            {:queue-name "some.queue"
+                                                             :exchange-name "my-exchange"
+                                                             :timeout-seconds 120
+                                                             :backoff-interval-seconds 60
+                                                             :consumer-threads 4
+                                                             :max-retries 3}}))
 
 
 ; this "system" just runs until shutdown, processing messages from "some.queue"
@@ -250,7 +251,7 @@ b
                                       message-consumer
                                       [:rmq-connection :monitoring]))
                       component/start-system))
-
+(component/stop-system message-system)
 
 
 
