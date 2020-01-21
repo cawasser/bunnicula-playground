@@ -32,7 +32,9 @@
 ; make an "object" of "type" Example$Person
 ;
 ; see the java code in:
-;      src/java/*.java
+;
+;      src/java/com/example/tutorial/Example.java
+;
 ;
 (def alice (protobuf/create Example$Person
              {:id 108
