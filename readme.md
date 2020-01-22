@@ -16,7 +16,7 @@ and use the "evaluate in REPL" functionality of that tool
 
 1. install RabbitMQ on your development system
    - MacOS - suggest using ["How to install RabbitMQ on Mac using Homebrew"](https://www.dyclassroom.com/howto-mac/how-to-install-rabbitmq-on-mac-using-homebrew)
-   - Windows - ["Installing RabbitMQ On Windows Using Scoop"](docs/installing-on-windows.md)
+   - Windows - ["Installing RabbitMQ On Windows"](docs/installing-on-windows.md)
 2. Start up Editor/IDE
 3. Start a REPL
 4. Pick a clojure namespace (both do the same kind of things)
