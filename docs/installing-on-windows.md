@@ -8,18 +8,13 @@ Open a command prompt as Administrator
 
 - Update scoop bucket list:
 
-    scoop bucket add extras`
+    scoop bucket add extras
 
 - Install the software 
 
-    scoop install rabbitmq --global`
+    scoop install rabbitmq --global
 
 > those are 2 dashes in front of global
-
-## Windows service installation and start-up
-
-    rabbitmq-service install
-    rabbitmq-service start
 
 ## Cookie issue resolution
 
