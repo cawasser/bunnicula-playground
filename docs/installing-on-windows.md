@@ -10,7 +10,7 @@ Open a command prompt as Administrator
 
     scoop bucket add extras
 
-- Install the software 
+- Install the software
 
     scoop install rabbitmq --global
 
@@ -31,7 +31,7 @@ Open a command prompt as Administrator
 
 ##  Quick test
 
-    rabbitmqctl status 
+    rabbitmqctl status
 
 This should return information about the rabbit service, and NOT show any errors.
 
