@@ -11,14 +11,14 @@
 ;
 ; compile the *.proto(s) into *.java:
 ;
-; protoc -I=/usr/include -I=/usr/local/include -I=resources/proto --java_out=src/java resources/proto/*.proto
+; protoc -I=/usr/local/include -I=resources/proto --java_out=src/java resources/proto/*.proto
 ;
 ;
 ;
 ;
 ; then compile the *.java into *.class (not correct yet):
 ;
-; javac -I=/usr/local/include -d target/classes src/java/com/example/tutorial/Example.java
+; javac -I /usr/local/include -d target/classes src/java/com/example/tutorial/Example.java
 
 
 
