@@ -77,7 +77,8 @@
 
 
 ; this works!
-(protocol/publish (:publisher server-system)
+(protocol/publish
+  (:publisher server-system)
   "some.queue"
   {:integration_id 1 :message_id "123"})
 
@@ -205,6 +206,7 @@
                         user-mgmt-queue))
                     [:rmq-connection :monitoring]))
     component/start-system))
+(component/stop-system user-system)
 
 
 (def calc-system
@@ -216,7 +218,7 @@
                                        calculate-queue))
                     [:rmq-connection :monitoring]))
     component/start-system))
-
+(component/stop-system calc-system)
 
 (def calc-result-system
   (-> (component/system-map
@@ -227,6 +229,7 @@
                                        calculate-result-queue))
                     [:rmq-connection :monitoring]))
     component/start-system))
+(component/stop-system calc-result-system)
 
 
 

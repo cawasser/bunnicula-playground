@@ -4,24 +4,23 @@
 
 ##  Software install
 
-Open a command prompt as Administrator
+Open a command prompt/powershell as Administrator
 
-- Update scoop bucket list:
 
-    scoop bucket add extras`
+Update scoop bucket list:
 
-- Install the software 
+    scoop bucket add extras
 
-    scoop install rabbitmq --global`
+Install the software
+
+    scoop install rabbitmq --global
 
 > those are 2 dashes in front of global
 
-## Windows service installation and start-up
-
-    rabbitmq-service install
-    rabbitmq-service start
-
 ## Cookie issue resolution
+
+This may only be necessary if you install the services... which is no longer
+recommended.
 
 - Launch Windows Explorer
 - Navigate to `c:\windows\system32`
@@ -36,7 +35,13 @@ Open a command prompt as Administrator
 
 ##  Quick test
 
-    rabbitmqctl status 
+Start the RabbitMQ broker
+
+    rabbitmq-server
+
+From another cmd/powershell window, run:
+
+    rabbitmqctl status
 
 This should return information about the rabbit service, and NOT show any errors.
 
@@ -56,9 +61,6 @@ Close command prompt
 - The management console page should appear
 
 ## Additional notes
-
-The service install sets the startup mode to automatic, so RabbitMQ service should start at system start up
-You can start/stop the service using the `rabbitmq-service` batch file or the standard Windows Service Control Manager.
 
 You will need to set up vhosts, exchanges, and queues using the management console depending on the needs of the project you are working with.
 

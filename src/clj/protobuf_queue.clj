@@ -27,7 +27,7 @@
 ; let's play a little with protobuf
 ;
 
-(import '(com.example.tutorial Example$Person))
+(import 'com.example.tutorial.Example$Person)
 
 ; make an "object" of "type" Example$Person
 ;
@@ -76,6 +76,7 @@ c
 ;
 (def round-trip (protobuf/bytes-> alice b))
 
+(protobuf/bytes-> (protobuf/create Example$Person {:id 0 :name ""}) b)
 round-trip
 alice
 (= round-trip c)
@@ -121,7 +122,7 @@ alice
                                     :port 5672
                                     :username "guest"
                                     :password "guest"
-                                    :vhost "/main"}))
+                                    :vhost "/bunnicula"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
